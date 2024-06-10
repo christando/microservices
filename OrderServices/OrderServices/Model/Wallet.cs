@@ -12,5 +12,6 @@ namespace OrderServices.Model
         public string password { get; set; }
         public string fullName { get; set; }
         public decimal saldo { get; set; }
+        public string paymentWallet { get; set; }
     }
 }

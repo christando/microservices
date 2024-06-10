@@ -25,7 +25,12 @@ namespace WalletServices.DAL
         }
         public void Delete(int id)
         {
-            throw new NotImplementedException();
+            using(var conn = new SqlConnection(GetConnectionString()))
+            {
+                var strsql = @"DELETE FROM Wallet WHERE WalletId = @WalletId";
+                var param = new {WalletId = id};
+                conn.Execute(strsql, param);
+            }
         }
 
         public IEnumerable<Wallet> GetAll()
@@ -52,8 +57,8 @@ namespace WalletServices.DAL
             using(var conn = new SqlConnection(GetConnectionString()))
             {
                 string strpass = encryptpass(obj.Password);
-                var strsql = @"INSERT INTO Wallet (Username, Password, FullName, Saldo) VALUES (@Username, @Password, @FullName, @Saldo)";
-                var param = new {Username = obj.Username, Password = strpass, FullName = obj.FullName, Saldo = obj.Saldo};
+                var strsql = @"INSERT INTO Wallet (Username, Password, FullName, Saldo, PaymentWallet) VALUES (@Username, @Password, @FullName, @Saldo, @PaymentWallet)";
+                var param = new {Username = obj.Username, Password = strpass, FullName = obj.FullName, Saldo = obj.Saldo, PaymentWallet = obj.PaymentWallet};
                 try {
                     conn.Execute(strsql, param);
                     return obj;
@@ -74,12 +79,12 @@ namespace WalletServices.DAL
             throw new NotImplementedException();
         }
 
-        public IEnumerable<Wallet> TopUpSaldo(int userId, decimal saldo)
+        public IEnumerable<Wallet> TopUpSaldo(string PaymentWallet, string Username,decimal saldo)
         {
             using(var conn = new SqlConnection(GetConnectionString()))
             {
-                var strsql = @"UPDATE Wallet SET Saldo = Saldo + @Saldo WHERE WalletId = @WalletId";
-                var param = new {Saldo = saldo, WalletId = userId};
+                var strsql = @"UPDATE Wallet SET Saldo = Saldo + @Saldo WHERE PaymentWallet = @PaymentWallet AND Username = @Username";
+                var param = new {Saldo = saldo, PaymentWallet = PaymentWallet, Username = Username};
                 try {
                     conn.Execute(strsql, param);
                     return GetAll();
@@ -97,10 +102,10 @@ namespace WalletServices.DAL
 
         public void UpdateSaldoAfterOrder(WalletUpdateSaldoDTO walletUpdateSaldoDTO)
         {
-            var strsql = @"UPDATE Wallet SET Saldo = Saldo - @Saldo WHERE Username = @Username";
+            var strsql = @"UPDATE Wallet SET Saldo = Saldo - @Saldo WHERE Username = @Username AND Password = @Password AND PaymentWallet = @PaymentWallet";
             using(SqlConnection conn = new SqlConnection(GetConnectionString()))
             {
-                var param = new {Saldo = walletUpdateSaldoDTO.saldo, Username = walletUpdateSaldoDTO.username};
+                var param = new {Saldo = walletUpdateSaldoDTO.saldo, Username = walletUpdateSaldoDTO.username, Password = walletUpdateSaldoDTO.password, PaymentWallet = walletUpdateSaldoDTO.paymentWallet};
                 try
                 {
                     conn.Execute(strsql, param);

@@ -40,7 +40,8 @@ app.MapGet("/API/Wallet" , (IWallet walletDAL) =>
             Username = wallet.Username,
             Password = wallet.Password,
             FullName = wallet.FullName,
-            Saldo = wallet.Saldo
+            Saldo = wallet.Saldo,
+            PaymentWallet = wallet.PaymentWallet
         });
     }
     return Results.Ok(walletDto);
@@ -58,7 +59,8 @@ app.MapGet("API/Wallet/GetByUsername/{username}", (IWallet walletDAL, string use
             Username = wallet.Username,
             Password = wallet.Password,
             FullName = wallet.FullName,
-            Saldo = wallet.Saldo
+            Saldo = wallet.Saldo,
+            PaymentWallet = wallet.PaymentWallet
         });
     }
     return Results.Ok(walletDto);
@@ -69,6 +71,7 @@ app.MapPost("/API/Wallet/insert/", (IWallet walletDAL, WalletDTO walletDto) =>
     {
         Wallet wallet = new Wallet
         {
+            PaymentWallet = walletDto.PaymentWallet,
             Username = walletDto.Username,
             Password = walletDto.Password,
             FullName = walletDto.FullName,
@@ -81,12 +84,24 @@ app.MapPost("/API/Wallet/insert/", (IWallet walletDAL, WalletDTO walletDto) =>
         return Results.BadRequest(ex.Message);
     }
 });
-app.MapPut("/API/Wallet/TopUp/{id}", (IWallet walletDAL, WalletTopUpDTO walletTopUpDto, int id) =>
+app.MapPut("/API/Wallet/TopUp/{PaymentWallet}", (IWallet walletDAL, WalletTopUpDTO walletTopUpDto, string PaymentWallet, string Username) =>
 {
     try
     {
-        var wallet = walletDAL.TopUpSaldo(id, walletTopUpDto.Saldo);
+        var wallet = walletDAL.TopUpSaldo(PaymentWallet, Username, walletTopUpDto.Saldo);
         return Results.Ok(wallet);
+    }catch(Exception ex)
+    {
+        return Results.BadRequest(ex.Message);
+    }
+});
+
+app.MapDelete("/API/Wallet/Delete/{id}", (IWallet walletDAL, int id) =>
+{
+    try
+    {
+        walletDAL.Delete(id);
+        return Results.Ok();
     }catch(Exception ex)
     {
         return Results.BadRequest(ex.Message);

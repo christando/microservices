@@ -12,6 +12,7 @@ namespace WalletServices.Models
         public string Password { get; set; }
         public string FullName { get; set; }
         public decimal Saldo { get; set; }
+        public string PaymentWallet { get; set; }
 
     }
 }

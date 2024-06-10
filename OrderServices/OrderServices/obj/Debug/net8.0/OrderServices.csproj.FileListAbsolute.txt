@@ -76,3 +76,4 @@ D:\valent (Ttitip)\smt6\microservices\OrderServices\OrderServices\obj\Debug\net8
 D:\valent (Ttitip)\smt6\microservices\OrderServices\OrderServices\bin\Debug\net8.0\Microsoft.Extensions.Http.Polly.dll
 D:\valent (Ttitip)\smt6\microservices\OrderServices\OrderServices\bin\Debug\net8.0\Polly.dll
 D:\valent (Ttitip)\smt6\microservices\OrderServices\OrderServices\bin\Debug\net8.0\Polly.Extensions.Http.dll
+D:\valent (Ttitip)\smt6\microservices\OrderServices\OrderServices\obj\Debug\net8.0\OrderServices.sourcelink.json

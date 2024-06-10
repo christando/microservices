@@ -53,7 +53,6 @@ namespace OrderServices.DAL
                     while(dr.Read()){
                         OrderHeader orderHeader = new OrderHeader();
                         orderHeader.OrderHeaderId = Convert.ToInt32(dr["OrderHeaderId"]);
-                        orderHeader.CustomerId= Convert.ToInt32(dr["CustomerId"]);
                         orderHeader.OrderDate = Convert.ToDateTime(dr["OrderDate"]);
                         orderHeader.Username = dr["Username"].ToString();
                         orderHeaders.Add(orderHeader);
@@ -85,8 +84,8 @@ namespace OrderServices.DAL
         public OrderHeader Insert(OrderHeader obj)
         {
             using(SqlConnection conn = new SqlConnection(GetConnectionString())){
-                var strsql = @"INSERT INTO OrderHeader(OrderDate, CustomerId, Username) VALUES(@OrderDate, @CustomerId, @Username);select @@IDENTITY;";
-                var param = new { OrderDate = obj.OrderDate, CustomerId = obj.CustomerId, Username = obj.Username};
+                var strsql = @"INSERT INTO OrderHeader(OrderDate, Username, Password) VALUES(@OrderDate, @Username, @Password);select @@IDENTITY;";
+                var param = new { OrderDate = obj.OrderDate, Username = obj.Username, Password = obj.Password};
                 try{
                     var id = conn.ExecuteScalar<int>(strsql, param);
                     obj.OrderHeaderId = id;
@@ -105,7 +104,6 @@ namespace OrderServices.DAL
                 SqlCommand cmd = new SqlCommand(strsql, conn);
                 var param = new {
                     OrderHeaderId = obj.OrderHeaderId,
-                    CustomerId = obj.CustomerId,
                     OrderDate = obj.OrderDate,
                     Username = obj.Username
                 };

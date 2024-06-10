@@ -38,3 +38,4 @@ D:\valent (Ttitip)\smt6\microservices\WalletService\WalletServices\obj\Debug\net
 D:\valent (Ttitip)\smt6\microservices\WalletService\WalletServices\obj\Debug\net8.0\WalletServices.pdb
 D:\valent (Ttitip)\smt6\microservices\WalletService\WalletServices\obj\Debug\net8.0\WalletServices.genruntimeconfig.cache
 D:\valent (Ttitip)\smt6\microservices\WalletService\WalletServices\obj\Debug\net8.0\ref\WalletServices.dll
+D:\valent (Ttitip)\smt6\microservices\WalletService\WalletServices\obj\Debug\net8.0\WalletServices.sourcelink.json

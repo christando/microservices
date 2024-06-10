@@ -13,5 +13,7 @@ namespace OrderServices.Model
         public int Quantity { get; set; }
         public decimal Price { get; set; }
         public string Username { get; set; }
+        public string password { get; set; }
+        public string PaymentWallet { get; set; }
     }
 }

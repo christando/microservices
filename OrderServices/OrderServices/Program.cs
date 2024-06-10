@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OrderServices;
 using OrderServices.DAL;
 using OrderServices.DAL.Interfaces;
@@ -20,6 +21,8 @@ builder.Services.AddScoped<IOrderDetails, OrderDetailDAL>();
 builder.Services.AddHttpClient<IProductService, ProductService>()
 .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(600)));
 builder.Services.AddHttpClient<IWalletService, WalletService>()
+.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(600)));
+builder.Services.AddHttpClient<ICustomerService, CustomerService>()
 .AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(600)));
 
 var app = builder.Build();
@@ -98,9 +101,9 @@ app.MapGet("/API/OrderHeader", (IOrderHeaders orderHeadersDAL) =>
         orderheaderDto.Add(new OrderHeaderDTO
         {
             OrderHeaderId = orderheader.OrderHeaderId,
-            CustomerId = orderheader.CustomerId,
             OrderDate = orderheader.OrderDate,
-            Username = orderheader.Username
+            Username = orderheader.Username,
+            Password = orderheader.Password
         });
     }
     return Results.Ok(orderheaderDto);
@@ -116,10 +119,20 @@ app.MapGet("/API/OrderHeader/GetById/{id}", (IOrderHeaders orderheaderDAL, int i
     return Results.Ok(orderheader);
 });
 
-app.MapPost("/API/OrderHeader/Insert/", (IOrderHeaders orderheaderDAL, OrderHeader obj)=>
+app.MapPost("/API/OrderHeader/Insert/", async (IOrderHeaders orderheaderDAL, OrderHeader obj, ICustomerService customerService)=>
 {
     try
     {
+
+        var Customer = await customerService.GetCustomerByUsername(obj.Username);
+        if(Customer == null)
+        {
+            return Results.BadRequest("Customer not found");
+        }
+        
+        obj.Username = Customer.username;
+        obj.Password = Customer.password;
+
         var orderheader = orderheaderDAL.Insert(obj);
         return Results.Created($"/API/OrderHeader/Insert/{orderheader.OrderHeaderId}", orderheader);
     }
@@ -135,7 +148,6 @@ app.MapPut("/API/OrderHeader/Update/{id}", (IOrderHeaders orderheaderDAL, int id
     {
         var orderheader = new OrderHeader{
         OrderHeaderId = id,
-        CustomerId = OHDTO.CustomerId,
         OrderDate = OHDTO.OrderDate,
         Username = OHDTO.Username
         };
@@ -162,58 +174,84 @@ app.MapGet("/OrderDetails/GetById/{id}", (IOrderDetails orderDetail, int id) =>
     return Results.Ok(order);
 });
 
-app.MapPost("/OrderDetails/insert", async (IOrderDetails orderDetail,IProductService productService ,OrderDetail obj, IWalletService walletService) =>
+app.MapPost("/OrderDetails/insert", async (IOrderDetails orderDetail, IProductService productService, OrderDetail obj, IWalletService walletService) =>
 {
     try
     {
-        //cek apakah product ada pada service product
-        var Product = await productService.GetProductById(obj.ProductId);
-        if(Product == null)
+        // Check if product exists
+        var product = await productService.GetProductById(obj.ProductId);
+        if (product == null)
         {
             return Results.BadRequest("Product not found");
         }
-        if(Product.quantity < obj.Quantity)
+
+        // Check product stock
+        if (product.quantity < obj.Quantity)
         {
             return Results.BadRequest("Stock not enough");
         }
-        var Wallet = await walletService.GetWalletByUsername(obj.Username);
-        if(Wallet == null)
+
+        // Check if wallet exists
+        var wallet = await walletService.GetWalletByUsername(obj.Username);
+        if (wallet == null)
         {
             return Results.BadRequest("Wallet not found");
         }
-        if(Wallet.saldo < (obj.Quantity * Product.price))
+
+        // Check if wallet has enough saldo
+        var totalCost = obj.Quantity * product.price;
+        if (wallet.saldo < totalCost)
         {
             return Results.BadRequest("Saldo not enough");
         }
 
+        // Set price and username in order detail object
+        obj.Price = product.price;
+        obj.Username = wallet.username;
 
-        obj.Price = Product.price;
-        obj.Username = Wallet.username;
+        // Insert order detail
         var order = orderDetail.Insert(obj);
-        
-        // update stock product
-        var productupdate = new ProductUpdateStockDTO
+        if (order == null)
+        {
+            return Results.BadRequest("Failed to insert order detail");
+        }
+
+        // Update product stock
+        var productUpdate = new ProductUpdateStockDTO
         {
             productID = obj.ProductId,
             quantity = obj.Quantity
         };
-        await productService.UpdateProductStock(productupdate);
-        
-        // update saldo wallet
+        await productService.UpdateProductStock(productUpdate);
+
+        // Update wallet saldo
         var walletUpdate = new WalletUpdateSaldoDTO
         {
-            username = obj.Username,
-            saldo = obj.Quantity * Product.price
+            username = wallet.username,
+            password = wallet.password,
+            saldo = totalCost,
+            paymentWallet = wallet.paymentWallet
         };
+
+        // Log JSON payload
+        var jsonPayload = JsonSerializer.Serialize(walletUpdate);
+        Console.WriteLine("Updating Saldo with payload: " + jsonPayload);
+
         await walletService.UpdateSaldo(walletUpdate);
 
         return Results.Created($"/OrderDetails/insert/{order.OrderDetailId}", order);
     }
     catch (Exception ex)
     {
-        return Results.BadRequest($"Error: {ex.Message} - {ex.Source} - {ex.StackTrace}");
+        // Log detailed error
+        var errorMessage = $"Error: {ex.Message} - Source: {ex.Source} - StackTrace: {ex.StackTrace}";
+        Console.WriteLine(errorMessage);
+        return Results.BadRequest(errorMessage);
     }
 });
+
+
+
 
 app.MapDelete("/OrderDetails/delete/{id}", (IOrderDetails orderDetail, int id) =>
 {

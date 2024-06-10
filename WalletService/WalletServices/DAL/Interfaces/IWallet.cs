@@ -11,7 +11,7 @@ namespace WalletServices.DAL.Interfaces
     {
         IEnumerable<Wallet> GetByUserId(int userId);
         IEnumerable<Wallet> GetByUsername(string username);
-        IEnumerable<Wallet> TopUpSaldo(int userId, decimal saldo);
+        IEnumerable<Wallet> TopUpSaldo(string PaymentWallet, string Username,decimal saldo);
         void UpdateSaldoAfterOrder(WalletUpdateSaldoDTO walletUpdateSaldoDTO);
     }
 }
